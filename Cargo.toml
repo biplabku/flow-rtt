@@ -1,0 +1,46 @@
+[package]
+name = "flow-rtt"
+version = "0.1.0"
+edition = "2021"
+authors = ["Biplab Das"]
+description = "Passive TCP round-trip time measurement from packet capture - zero network overhead latency monitoring"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/biplabku/flow-rtt"
+keywords = ["tcp", "rtt", "latency", "pcap", "monitoring"]
+categories = ["network-programming", "asynchronous"]
+readme = "README.md"
+
+[dependencies]
+# Packet capture
+pcap = "2"
+
+# Packet parsing
+etherparse = "0.18"
+
+# Histogram for percentiles
+hdrhistogram = "7"
+
+# Async runtime
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+
+# Error handling
+thiserror = "1"
+
+# Logging
+tracing = "0.1"
+
+# Optional: CLI binary
+clap = { version = "4", features = ["derive"], optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tracing-subscriber = "0.3"
+
+[features]
+default = []
+cli = ["dep:clap"]
+
+[[bin]]
+name = "flow-rtt"
+path = "src/bin/flow_rtt.rs"
+required-features = ["cli"]
