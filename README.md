@@ -44,21 +44,23 @@ flow-rtt passively observes TCP flows and extracts RTT by:
 
 ## Quick Start
 
+**Requires `CAP_NET_RAW` or `sudo`** — pcap needs raw socket access.
+
 ```toml
 [dependencies]
 flow-rtt = "0.1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
+**Option A: Batch mode** (process N packets, return stats)
+
 ```rust
 use flow_rtt::{PassiveMonitor, MonitorConfig};
 
-#[tokio::main]
-async fn main() -> Result<(), flow_rtt::Error> {
-    let config = MonitorConfig::default();
-    let mut monitor = PassiveMonitor::new("eth0", config)?;
+fn main() -> Result<(), flow_rtt::Error> {
+    let mut monitor = PassiveMonitor::new("eth0", MonitorConfig::default())?;
 
-    // Process a batch of packets
+    // Process up to 1000 packets, return flows seen so far
     let stats = monitor.process_batch(1000)?;
 
     for flow in stats {
@@ -68,7 +70,26 @@ async fn main() -> Result<(), flow_rtt::Error> {
                 flow.rtt_p50_ms, flow.rtt_p99_ms);
         }
     }
+    Ok(())
+}
+```
 
+**Option B: Async streaming** (emit a FlowStats each time a flow completes)
+
+```rust
+use flow_rtt::{PassiveMonitor, MonitorConfig};
+
+#[tokio::main]
+async fn main() -> Result<(), flow_rtt::Error> {
+    let mut monitor = PassiveMonitor::new("eth0", MonitorConfig::default())?;
+
+    while let Some(flow) = monitor.next_flow_stats().await {
+        if flow.has_rtt_data() {
+            println!("{} -> {}: p50={:.2}ms p99={:.2}ms",
+                flow.src, flow.dst,
+                flow.rtt_p50_ms, flow.rtt_p99_ms);
+        }
+    }
     Ok(())
 }
 ```
